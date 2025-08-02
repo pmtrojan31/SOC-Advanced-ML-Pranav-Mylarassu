@@ -1,2 +1,4 @@
-# SOC-Advanced-ML-Pranav-Mylarassu
- Project files and documentation of my learning journey through the Advanced Machine Learning SOC project.
+# Advanced ML
+## Pranav Mylarassu
+
+The final project involves an implementation of junction trees and belief propagation to calculate marginal and exact inferences on a dataset of several variables.

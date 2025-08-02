@@ -35,14 +35,13 @@ class Inference:
         self.potentials = data['potentials']
         self.k = data['k']
         
-        # Build adjacency list for the graph
+        # We create a dictionary containing each node as keys and the others nodes its connected to as values
         self.graph = defaultdict(set)
         for edge in self.edges:
             u, v = edge
             self.graph[u].add(v)
             self.graph[v].add(u)
         
-        # Initialize data structures
         self.cliques = []
         self.junction_tree = defaultdict(set)
         self.clique_potentials = {}
@@ -60,22 +59,22 @@ class Inference:
 
         Refer to the problem statement for details on triangulation and clique extraction.
         """
-        # Create a copy of the graph for triangulation
+        # We'll create a copy of the graph for triangulation
         triangulated_graph = defaultdict(set)
         for v in self.graph:
             triangulated_graph[v] = self.graph[v].copy()
         
-        # Add all variables to the graph (in case some are isolated)
+        # Variables that are isolated wont be in self.graph. But we must add them to the triangulated graph.
         for v in self.variables:
             if v not in triangulated_graph:
                 triangulated_graph[v] = set()
         
-        # Minimum fill-in heuristic for triangulation
+        # We use the minimum fill-in method to decide the variable order of elimination
         eliminated = set()
         elimination_order = []
         
         while len(eliminated) < self.num_variables:
-            # Find variable with minimum fill-in edges
+            # To find variable with minimum fill-in edges
             min_fill = float('inf')
             min_var = None
             
@@ -95,21 +94,21 @@ class Inference:
                     min_fill = fill_edges
                     min_var = v
             
-            # Eliminate the chosen variable
+            # We then eliminate the variable
             eliminated.add(min_var)
             elimination_order.append(min_var)
             
-            # Add fill-in edges
+            # Then add fill-in edges
             neighbors = [n for n in triangulated_graph[min_var] if n not in eliminated]
             for i in range(len(neighbors)):
                 for j in range(i + 1, len(neighbors)):
                     triangulated_graph[neighbors[i]].add(neighbors[j])
                     triangulated_graph[neighbors[j]].add(neighbors[i])
         
-        # Extract maximal cliques using elimination order
+        # Now we extract maximal cliques using elimination order
         self.cliques = []
         for var in elimination_order:
-            # Create clique with variable and its remaining neighbors
+            # Start off the clique with just the given variable in the elimination order
             clique = {var}
             for neighbor in self.graph[var]:
                 if neighbor in elimination_order[elimination_order.index(var):]:
@@ -125,7 +124,7 @@ class Inference:
                 if clique not in self.cliques:
                     self.cliques.append(clique)
         
-        # Add single variable cliques if needed
+        # We then add single variable cliques
         for var in self.variables:
             found_in_clique = False
             for clique in self.cliques:
@@ -150,19 +149,19 @@ class Inference:
         if len(self.cliques) <= 1:
             return
         
-        # Create a complete graph of cliques with edge weights as separator sizes
+        # We create a complete list of pairs of cliques along with the variables that are common among them, along with their number.
         clique_graph = []
         for i in range(len(self.cliques)):
             for j in range(i + 1, len(self.cliques)):
                 separator = set(self.cliques[i]).intersection(set(self.cliques[j]))
                 if separator:
-                    weight = -len(separator)  # Negative for max heap behavior
+                    weight = len(separator) 
                     clique_graph.append((weight, i, j, separator))
         
         # Sort by weight (separator size) in descending order
-        clique_graph.sort()
+        clique_graph.sort(reverse=True)
         
-        # Use Kruskal's algorithm to find maximum spanning tree
+        # We use this thing called Kruskal's algorithm to find the "maximum spanning tree"
         parent = list(range(len(self.cliques)))
         
         def find(x):
@@ -177,7 +176,7 @@ class Inference:
                 return True
             return False
         
-        # Build junction tree
+        # Build the junction tree
         self.junction_tree = defaultdict(set)
         self.separators = {}
         
@@ -440,7 +439,7 @@ class Inference:
         if z_value == 0:
             return []
         
-        # Generate all possible assignments and their probabilities
+        # We first generate all possible assignments and their probabilities
         all_assignments = []
         
         for assignment in product(*[range(self.variable_domains[var]) for var in self.variables]):
@@ -451,7 +450,7 @@ class Inference:
         # Sort by probability in descending order
         all_assignments.sort(reverse=True)
         
-        # Return top k assignments
+        # Now we return the k combinations with highest probabilities
         top_k = []
         for i in range(min(self.k, len(all_assignments))):
             prob, assignment = all_assignments[i]
@@ -471,10 +470,10 @@ class Inference:
             variables = potential['variables']
             values = potential['values']
             
-            # Get assignment for these variables
+            # We get assignment for these variables
             var_assignment = [assignment[var] for var in variables]
             
-            # Convert to flat index
+            # Converting to flat index
             flat_index = 0
             multiplier = 1
             for i in reversed(range(len(variables))):
